@@ -3,6 +3,7 @@ package com.company;
 import javax.swing.*;
 
 public class Snake extends JFrame {
+
     Snake() {
         Board board = new Board();
         add(board);

@@ -12,33 +12,31 @@ public class Board extends JPanel implements ActionListener{
 
     private final int UNIT_SIZE = 25;
     private final int MATRIX_DIM = 600;
-    private final int ALL_UNITS = (MATRIX_DIM*MATRIX_DIM)/UNIT_SIZE;
+    private final int ALL_UNITS = (MATRIX_DIM * MATRIX_DIM) / UNIT_SIZE;
 
     private int appleX;
     private int appleY;
     private int rockX;
     private int rockY;
 
-    private int time;
     private final int snakeX[] = new int[ALL_UNITS];
-    private final int snakeY[] = new int[ALL_UNITS];
+    private final int y[] = new int[ALL_UNITS];
 
     private boolean leftDirection = false;
     private boolean rightDirection =  true;
     private boolean upDirection =  false;
     private boolean downDirection =  false;
-
     private boolean inGame = true;
+
     private int applesConsumed;
     private int snakeSize;
 
     Random random;
     private Timer timer;
-    private Timer clock;
 
     Board(){
         random = new Random();
-        addKeyListener(new keyListener());
+        addKeyListener(new KListener());
         setBackground(Color.BLACK);
         setPreferredSize(new Dimension(MATRIX_DIM, MATRIX_DIM));
         setFocusable(true);
@@ -46,8 +44,21 @@ public class Board extends JPanel implements ActionListener{
         initGame();
     }
 
-    public void advanceTime(){
-        ++time;
+
+    public void initGame(){
+        snakeSize = 2;
+        applesConsumed = 0;
+
+        for(int i = 0; i < snakeSize; i++){
+            snakeX[i] = 300;
+            y[i] = 300;
+        }
+
+        putApple();
+        putRock();
+        timer = new Timer(120, this);
+        timer.start();
+
     }
 
     public void loadImages(){
@@ -58,28 +69,7 @@ public class Board extends JPanel implements ActionListener{
         rock = RockIc.getImage();
     }
 
-    public void initGame(){
-        snakeSize = 2;
-        applesConsumed = 0;
-
-        for(int i = 0; i < snakeSize; i++){
-            snakeX[i] = 300;
-            snakeY[i] = 300;
-        }
-
-        putApple();
-        putRock();
-        timer = new Timer(120, this);
-        timer.start();
-        clock = new Timer(1000, new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent actionEvent) {
-                advanceTime();
-            }
-        });
-        clock.start();
-    }
-
+    /* item interactions */
     public void putApple(){
         appleX = random.nextInt((int)(MATRIX_DIM/UNIT_SIZE))*UNIT_SIZE;
         appleY = random.nextInt((int)(MATRIX_DIM/UNIT_SIZE))*UNIT_SIZE;
@@ -96,7 +86,7 @@ public class Board extends JPanel implements ActionListener{
     }
 
     public void checkApple(){
-        if((snakeX[0] == appleX) && (snakeY[0] == appleY)){
+        if((snakeX[0] == appleX) && (y[0] == appleY)){
             snakeSize++;
             applesConsumed++;
             putApple();
@@ -104,15 +94,10 @@ public class Board extends JPanel implements ActionListener{
         }
     }
 
+    /* Visualizer */
     public void paintComponent(Graphics g){
         super.paintComponent(g);
         draw(g);
-    }
-
-    public void drawKey(String Key, Graphics g){
-        g.setColor(Color.WHITE);
-        g.setFont(new Font(Key, Font.BOLD, 40));
-        g.drawString(Key, 20, 80);
     }
 
     public void draw(Graphics g){
@@ -124,50 +109,49 @@ public class Board extends JPanel implements ActionListener{
             g.setFont(new Font("TimesRoman", Font.BOLD, 40));
             g.drawString("Score: " + applesConsumed, 220, 50);
 
-            g.setColor(Color.WHITE);
-            g.setFont(new Font("TimesRoman", Font.BOLD, 40));
-            g.drawString(Integer.toString(time), 20, 40);
-
-            if(upDirection){
-                drawKey("W", g);
-            }
-            if(downDirection){
-                drawKey("S", g);
-            }
-            if(leftDirection){
-                drawKey("A", g);
-            }
-            if(rightDirection){
-                drawKey("D", g);
-            }
-
             for(int i = 0; i < snakeSize; i++){
                 if(i == 0){
                     g.setColor(Color.green);
-                    g.fillRect(snakeX[i], snakeY[i], UNIT_SIZE, UNIT_SIZE);
+                    g.fillRect(snakeX[i], y[i], UNIT_SIZE, UNIT_SIZE);
                 }else{
                     g.setColor(new Color(45, 180, 0));
-                    g.fillRect(snakeX[i], snakeY[i], UNIT_SIZE, UNIT_SIZE);
+                    g.fillRect(snakeX[i], y[i], UNIT_SIZE, UNIT_SIZE);
                 }
             }
 
             Toolkit.getDefaultToolkit().sync();
+        }else{
+            String name = JOptionPane.showInputDialog("Please Enter your name: ");
+            String[] options = { "new game", "show highscores"};
+
+            int response = JOptionPane.showOptionDialog(null, "What would you like to do?", "Game Over",JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, options, options[0]);
+            JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(this);
+            frame.dispose();
+            if(response == 0){
+                new Snake().setVisible(true);
+            }
+            else{
+                HighscorePage highscorePage = new HighscorePage(name, applesConsumed);
+                highscorePage.show();
+            }
+
         }
     }
 
+    /* Movement trackers */
     public void checkCollision(){
 
         for(int i = snakeSize; i > 0 ; i--){
-            if((i > 2) && (snakeX[0] == snakeX[i]) && (snakeY[0] == snakeY[i])){
+            if((i > 2) && (snakeX[0] == snakeX[i]) && (y[0] == y[i])){
                 inGame = false;
             }
         }
 
-        if(snakeX[0] == rockX && snakeY[0] == rockY){
+        if(snakeX[0] == rockX && y[0] == rockY){
             inGame = false;
         }
 
-        if(snakeY[0] >= 600){
+        if(y[0] >= 600){
             inGame = false;
         }
 
@@ -179,7 +163,7 @@ public class Board extends JPanel implements ActionListener{
             inGame = false;
         }
 
-        if(snakeY[0] < 0 ){
+        if(y[0] < 0 ){
             inGame = false;
         }
 
@@ -192,7 +176,7 @@ public class Board extends JPanel implements ActionListener{
 
         for(int i = snakeSize; i > 0 ; i--){
             snakeX[i] = snakeX[i - 1];
-            snakeY[i] = snakeY[i - 1];
+            y[i] = y[i - 1];
         }
 
         if(leftDirection){
@@ -202,10 +186,10 @@ public class Board extends JPanel implements ActionListener{
             snakeX[0] += UNIT_SIZE;
         }
         if(upDirection){
-            snakeY[0] = snakeY[0] -  UNIT_SIZE;
+            y[0] = y[0] -  UNIT_SIZE;
         }
         if(downDirection){
-            snakeY[0] += UNIT_SIZE;
+            y[0] += UNIT_SIZE;
         }
     }
 
@@ -218,7 +202,7 @@ public class Board extends JPanel implements ActionListener{
         repaint();
     }
 
-    private class keyListener extends KeyAdapter{
+    private class KListener extends KeyAdapter{
 
         @Override
         public void keyPressed(KeyEvent e){
